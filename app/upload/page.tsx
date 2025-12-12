@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import heic2any from "heic2any";
+// heic2any is imported dynamically in convertHeicToJpeg to avoid SSR issues
 
 interface UploadedImage {
   id: string;
@@ -62,7 +62,12 @@ function isHeicFile(file: File): boolean {
 async function convertHeicToJpeg(file: File): Promise<File> {
   try {
     console.log(`Converting HEIC file: ${file.name}`);
-    const blob = await heic2any({
+    
+    // Dynamically import heic2any if not already loaded
+    const heic2anyModule = await import("heic2any");
+    const converter = heic2anyModule.default;
+    
+    const blob = await converter({
       blob: file,
       toType: "image/jpeg",
       quality: 0.9,
