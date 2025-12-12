@@ -1,183 +1,151 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, LazyMotion, domAnimation } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ImageComparison, BeforeAfterCard } from "@/components/ui/image-comparison";
 import {
-  Sparkles,
-  Upload,
-  Wand2,
-  Download,
+  ArrowRight,
   Check,
   Star,
-  ArrowRight,
-  Shield,
+  ChevronDown,
   Clock,
   Zap,
-  ChevronDown,
-  Camera,
-  Briefcase,
-  Linkedin,
+  Shield,
   Users,
+  Sparkles,
+  Camera,
+  Download,
+  Wand2,
 } from "lucide-react";
 import Link from "next/link";
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
+
+// Sample images (high-quality Unsplash photos for demo)
+const SAMPLE_IMAGES = {
+  before1: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
+  after1: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=face",
+  before2: "https://images.unsplash.com/photo-1494790108755-2616b612b2a6?w=400&h=500&fit=crop&crop=face",
+  after2: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face",
+  before3: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
+  after3: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face",
 };
 
-const stagger = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1,
-    },
+// Testimonials data
+const testimonials = [
+  {
+    quote: "I was skeptical at first, but the results blew me away. Got my dream job with these headshots on LinkedIn!",
+    author: "Sarah Mitchell",
+    role: "Product Manager at Google",
+    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b2a6?w=100&h=100&fit=crop&crop=face",
+    rating: 5,
   },
-};
+  {
+    quote: "Saved me $400 and a whole day. The AI perfectly captured my professional look. Highly recommend!",
+    author: "James Chen",
+    role: "Startup Founder",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+    rating: 5,
+  },
+  {
+    quote: "As a real estate agent, I need fresh photos constantly. PicPro AI is now my go-to solution.",
+    author: "Maria Lopez",
+    role: "Top 1% Realtor",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face",
+    rating: 5,
+  },
+];
 
-// Before/After placeholder images (gradient placeholders)
-const BeforeAfterShowcase = () => {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+// Pricing data
+const pricingPlans = [
+  {
+    name: "Starter",
+    price: 29,
+    description: "Perfect for LinkedIn",
+    features: [
+      "40 AI headshots",
+      "5 professional styles",
+      "48-hour delivery",
+      "High-resolution downloads",
+    ],
+    cta: "Get Started",
+    popular: false,
+  },
+  {
+    name: "Professional",
+    price: 49,
+    description: "Best for job seekers",
+    features: [
+      "100 AI headshots",
+      "10 professional styles",
+      "2-hour express delivery",
+      "4K resolution downloads",
+      "LinkedIn banner included",
+    ],
+    cta: "Most Popular",
+    popular: true,
+  },
+  {
+    name: "Executive",
+    price: 99,
+    description: "Complete branding package",
+    features: [
+      "200+ AI headshots",
+      "All styles unlocked",
+      "1-hour priority delivery",
+      "4K + RAW formats",
+      "Custom backgrounds",
+      "Priority support",
+    ],
+    cta: "Go Premium",
+    popular: false,
+  },
+];
 
-  const transformations = [
-    { before: "Casual selfie", after: "Tech Executive", color: "from-blue-500/20 to-purple-500/20" },
-    { before: "Phone photo", after: "Creative Director", color: "from-amber-500/20 to-rose-500/20" },
-    { before: "Quick snap", after: "Finance Professional", color: "from-emerald-500/20 to-cyan-500/20" },
-    { before: "Home photo", after: "Startup Founder", color: "from-violet-500/20 to-pink-500/20" },
-  ];
+// FAQ data
+const faqs = [
+  {
+    question: "How does it work?",
+    answer: "Simply upload 10-15 photos of yourself (selfies work great!). Our AI analyzes your unique features and generates professional headshots in various styles. The whole process takes about 30 minutes.",
+  },
+  {
+    question: "What kind of photos should I upload?",
+    answer: "Upload clear photos of your face from different angles. Good lighting helps! Selfies, casual photos, and even older photos work well. The more variety, the better the results.",
+  },
+  {
+    question: "How long does it take?",
+    answer: "Depending on your package: Starter (48 hours), Professional (2 hours), Executive (1 hour). Most users get their headshots much faster!",
+  },
+  {
+    question: "Can I get a refund if I'm not satisfied?",
+    answer: "Absolutely! We offer a 100% money-back guarantee. If you're not happy with your headshots, contact us within 7 days for a full refund.",
+  },
+  {
+    question: "Are the headshots really AI-generated?",
+    answer: "Yes! We use state-of-the-art AI trained on millions of professional photos. The AI learns your unique features and generates completely new, professional-looking headshots.",
+  },
+  {
+    question: "Can I use these for LinkedIn?",
+    answer: "Absolutely! Your headshots are yours to use anywhere - LinkedIn, resumes, company websites, social media, and more.",
+  },
+];
 
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {transformations.map((item, index) => (
-        <motion.div
-          key={index}
-          className="relative group cursor-pointer"
-          onHoverStart={() => setHoveredIndex(index)}
-          onHoverEnd={() => setHoveredIndex(null)}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: index * 0.1 }}
-        >
-          <div className={`aspect-[3/4] rounded-2xl bg-gradient-to-br ${item.color} border border-border/50 overflow-hidden relative`}>
-            {/* Before state */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center bg-muted/50"
-              animate={{ opacity: hoveredIndex === index ? 0 : 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="text-center p-4">
-                <Camera className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{item.before}</p>
-              </div>
-            </motion.div>
-            {/* After state */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
-              animate={{ opacity: hoveredIndex === index ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="text-center p-4">
-                <Briefcase className="w-8 h-8 mx-auto mb-2 text-primary" />
-                <p className="text-sm font-medium text-primary">{item.after}</p>
-              </div>
-            </motion.div>
-          </div>
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-            <Badge variant="secondary" className="text-xs">
-              {hoveredIndex === index ? "After" : "Before"}
-            </Badge>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
-
-// Pricing Card Component
-const PricingCard = ({
-  title,
-  price,
-  features,
-  popular,
-  ctaText,
-}: {
-  title: string;
-  price: number;
-  features: string[];
-  popular?: boolean;
-  ctaText: string;
-}) => (
-  <motion.div
-    whileHover={{ y: -5 }}
-    className={`relative ${popular ? "scale-105 z-10" : ""}`}
-  >
-    {popular && (
-      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-        <Badge className="bg-primary text-primary-foreground px-4 py-1">
-          Most Popular
-        </Badge>
-      </div>
-    )}
-    <Card
-      className={`p-6 h-full ${
-        popular
-          ? "border-primary/50 bg-gradient-to-b from-primary/10 to-transparent"
-          : "border-border/50"
-      }`}
-    >
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <div className="flex items-baseline justify-center gap-1">
-          <span className="text-4xl font-bold">${price}</span>
-          <span className="text-muted-foreground">one-time</span>
-        </div>
-      </div>
-      <ul className="space-y-3 mb-6">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-start gap-2">
-            <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-            <span className="text-sm text-muted-foreground">{feature}</span>
-          </li>
-        ))}
-      </ul>
-      <Link href="/upload">
-        <Button
-          className={`w-full ${
-            popular
-              ? "bg-primary hover:bg-primary/90"
-              : "bg-secondary hover:bg-secondary/90"
-          }`}
-        >
-          {ctaText}
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </Link>
-    </Card>
-  </motion.div>
-);
-
-// FAQ Item
-const FAQItem = ({
-  question,
-  answer,
-}: {
-  question: string;
-  answer: string;
-}) => {
+// FAQ Accordion Item
+function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-border/50">
+    <div className="border-b border-border/50 last:border-0">
       <button
-        className="w-full py-4 flex items-center justify-between text-left"
+        className="w-full py-5 flex items-center justify-between text-left group"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="font-medium">{question}</span>
+        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+          {question}
+        </span>
         <ChevronDown
-          className={`w-5 h-5 text-muted-foreground transition-transform ${
+          className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -185,33 +153,87 @@ const FAQItem = ({
       <motion.div
         initial={false}
         animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+        transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
         className="overflow-hidden"
       >
-        <p className="pb-4 text-muted-foreground">{answer}</p>
+        <p className="pb-5 text-muted-foreground leading-relaxed">{answer}</p>
       </motion.div>
     </div>
   );
-};
+}
+
+// Pricing Card
+function PricingCard({
+  name,
+  price,
+  description,
+  features,
+  cta,
+  popular,
+}: typeof pricingPlans[0]) {
+  return (
+    <Card
+      className={`relative p-6 md:p-8 h-full flex flex-col ${
+        popular
+          ? "border-primary/50 bg-gradient-to-b from-primary/5 to-transparent"
+          : "border-border/50"
+      }`}
+    >
+      {popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+            Most Popular
+          </span>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-1">{name}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-bold">${price}</span>
+          <span className="text-muted-foreground text-sm">one-time</span>
+        </div>
+      </div>
+
+      <ul className="space-y-3 mb-8 flex-grow">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-start gap-3">
+            <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <span className="text-sm text-muted-foreground">{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      <Link href="/upload" className="mt-auto">
+        <Button
+          variant={popular ? "default" : "outline"}
+          size="lg"
+          className="w-full"
+        >
+          {cta}
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
+      </Link>
+    </Card>
+  );
+}
 
 export default function LandingPage() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    <LazyMotion features={domAnimation}>
-    <div className="min-h-screen bg-background bg-grid bg-radial-gradient" suppressHydrationWarning>
+    <div className="min-h-screen bg-background bg-noise">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">PicPro AI</span>
+              <span className="text-lg font-semibold tracking-tight">PicPro AI</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -225,7 +247,7 @@ export default function LandingPage() {
               </a>
             </div>
             <Link href="/upload">
-              <Button size="sm" className="bg-primary hover:bg-primary/90">
+              <Button size="default">
                 Get Started
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -235,157 +257,167 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            className="text-center max-w-4xl mx-auto"
-            initial="initial"
-            animate="animate"
-            variants={stagger}
-          >
-            <motion.div variants={fadeInUp}>
-              <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 px-4 py-2">
-                <Zap className="w-4 h-4 mr-2" />
-                Trusted by 10,000+ professionals
-              </Badge>
-            </motion.div>
-            <motion.h1
-              variants={fadeInUp}
-              className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
-            >
-              Professional Headshots
-              <br />
-              <span className="gradient-text">in Minutes, Not Hours</span>
-            </motion.h1>
-            <motion.p
-              variants={fadeInUp}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Upload a few selfies, and our AI creates 100+ stunning professional
-              headshots. Perfect for LinkedIn, resumes, and your personal brand.
-              No photographer needed.
-            </motion.p>
+      <section className="pt-28 pb-16 md:pt-36 md:pb-24 px-4 bg-spotlight">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Hero Text */}
             <motion.div
-              variants={fadeInUp}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center lg:text-left"
             >
-              <Link href="/upload">
-                <Button
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-lg px-8 py-6 animate-pulse-glow"
-                >
-                  Get Your Headshots Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                100% money-back guarantee
+              <div className="inline-flex items-center gap-2 bg-secondary/50 border border-border/50 rounded-full px-4 py-1.5 mb-6">
+                <Zap className="w-4 h-4 text-accent" />
+                <span className="text-sm text-muted-foreground">Trusted by 10,000+ professionals</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 text-balance">
+                Professional Headshots
+                <br />
+                <span className="gradient-text">in Minutes, Not Hours</span>
+              </h1>
+              
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 text-pretty">
+                Upload a few selfies, and our AI creates 100+ stunning professional
+                headshots. Perfect for LinkedIn, resumes, and your personal brand.
               </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                <Link href="/upload">
+                  <Button size="xl" variant="glow">
+                    Get Your Headshots Now
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  100% money-back guarantee
+                </p>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mt-10 pt-8 border-t border-border/30">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="w-4 h-4 text-accent" />
+                  <span className="text-sm">30 min delivery</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4 text-accent" />
+                  <span className="text-sm">50,000+ headshots</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-accent text-accent" />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-1">4.9/5</span>
+                </div>
+              </div>
             </motion.div>
-          </motion.div>
 
-          {/* Before/After Showcase */}
-          <motion.div
-            className="mt-20"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <p className="text-center text-sm text-muted-foreground mb-6">
-              Hover to see the transformation
-            </p>
-            <BeforeAfterShowcase />
-          </motion.div>
-
-          {/* Trust Badges */}
-          <motion.div
-            className="mt-16 flex flex-wrap items-center justify-center gap-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-5 h-5" />
-              <span className="text-sm">Results in 30 minutes</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="w-5 h-5" />
-              <span className="text-sm">50,000+ headshots created</span>
-            </div>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-              ))}
-              <span className="text-sm text-muted-foreground ml-2">4.9/5 rating</span>
-            </div>
-          </motion.div>
+            {/* Hero Image - Before/After Comparison */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative"
+            >
+              <ImageComparison
+                beforeImage={SAMPLE_IMAGES.before1}
+                afterImage={SAMPLE_IMAGES.after1}
+                beforeLabel="Your Selfie"
+                afterLabel="AI Headshot"
+              />
+              
+              {/* Floating badge */}
+              <div className="absolute -bottom-4 -right-4 md:bottom-8 md:-right-8 bg-card border border-border/50 rounded-xl p-3 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Wand2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">AI Powered</p>
+                    <p className="text-xs text-muted-foreground">Studio quality results</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Social Proof Banner */}
-      <section className="py-12 border-y border-border/50 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-center gap-12 opacity-60">
-            <Linkedin className="w-8 h-8" />
-            <span className="text-2xl font-bold">Indeed</span>
-            <span className="text-2xl font-bold">Glassdoor</span>
-            <span className="text-2xl font-bold">AngelList</span>
-            <span className="text-2xl font-bold">Y Combinator</span>
+      {/* Logo Bar */}
+      <section className="py-10 border-y border-border/30 bg-muted/20">
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Perfect for professionals on
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-50">
+            <span className="text-xl font-bold tracking-tight">LinkedIn</span>
+            <span className="text-xl font-bold tracking-tight">Indeed</span>
+            <span className="text-xl font-bold tracking-tight">Glassdoor</span>
+            <span className="text-xl font-bold tracking-tight">AngelList</span>
+            <span className="text-xl font-bold tracking-tight">Hired</span>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              Simple Process
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
+      <section id="how-it-works" className="py-20 md:py-28 px-4">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">Simple Process</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               How It Works
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Three simple steps to get your professional headshots. No studio visit
-              required.
+              Three simple steps to get your professional headshots. No studio visit required.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                icon: Upload,
-                title: "1. Upload Selfies",
-                description:
-                  "Upload 10-15 photos of yourself. Different angles and lighting work best.",
+                icon: Camera,
+                step: "01",
+                title: "Upload Selfies",
+                description: "Upload 10-15 photos of yourself. Different angles and lighting work best.",
               },
               {
                 icon: Wand2,
-                title: "2. AI Magic",
-                description:
-                  "Our AI learns your unique features and generates professional headshots in various styles.",
+                step: "02",
+                title: "AI Magic",
+                description: "Our AI learns your unique features and generates professional headshots.",
               },
               {
                 icon: Download,
-                title: "3. Download & Use",
-                description:
-                  "Get 100+ high-resolution headshots ready for LinkedIn, resumes, and more.",
+                step: "03",
+                title: "Download & Use",
+                description: "Get 100+ high-resolution headshots ready for LinkedIn and more.",
               },
-            ].map((step, index) => (
+            ].map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Card className="p-6 h-full border-border/50 hover:border-primary/50 transition-colors">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                    <step.icon className="w-6 h-6 text-primary" />
+                <Card className="p-6 h-full border-border/50 card-hover">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <item.icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <span className="text-4xl font-bold text-muted/30">{item.step}</span>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground">{step.description}</p>
+                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </Card>
               </motion.div>
             ))}
@@ -393,68 +425,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Style Showcase */}
-      <section className="py-24 px-4 bg-muted/20">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              Multiple Styles
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
-              One Upload, Endless Possibilities
+      {/* Before/After Gallery */}
+      <section className="py-20 md:py-28 px-4 bg-muted/20">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">Transformations</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              See the Difference
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Get headshots in various professional styles - all from a single upload.
+              Hover over each image to see the transformation from selfie to professional headshot.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              "Corporate Executive",
-              "Tech Startup",
-              "Creative Professional",
-              "Finance & Banking",
-              "Real Estate",
-              "Healthcare",
-              "Legal Professional",
-              "Academic",
-            ].map((style, index) => (
-              <motion.div
-                key={style}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                whileHover={{ scale: 1.02 }}
-              >
-                <Card className="p-4 text-center border-border/50 hover:border-primary/50 transition-all cursor-pointer">
-                  <div className="aspect-square rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 mb-3 flex items-center justify-center">
-                    <Briefcase className="w-8 h-8 text-primary/60" />
-                  </div>
-                  <p className="text-sm font-medium">{style}</p>
-                </Card>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <BeforeAfterCard
+              beforeImage={SAMPLE_IMAGES.before1}
+              afterImage={SAMPLE_IMAGES.after1}
+              title="Tech Executive"
+            />
+            <BeforeAfterCard
+              beforeImage={SAMPLE_IMAGES.before2}
+              afterImage={SAMPLE_IMAGES.after2}
+              title="Creative Director"
+            />
+            <BeforeAfterCard
+              beforeImage={SAMPLE_IMAGES.before3}
+              afterImage={SAMPLE_IMAGES.after3}
+              title="Finance Professional"
+            />
           </div>
         </div>
       </section>
 
       {/* Comparison Section */}
-      <section className="py-24 px-4">
+      <section className="py-20 md:py-28 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              Save Time & Money
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">Save Time & Money</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Why PicPro AI?
             </h2>
-          </div>
+          </motion.div>
 
-          <Card className="p-8 border-border/50">
+          <Card className="p-6 md:p-8 border-border/50">
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-xl font-semibold mb-4 text-muted-foreground line-through">
+                <h3 className="text-lg font-medium mb-4 text-muted-foreground line-through">
                   Traditional Photographer
                 </h3>
                 <ul className="space-y-3">
@@ -466,11 +495,8 @@ export default function LandingPage() {
                     "5-10 photos only",
                     "Days for delivery",
                   ].map((item, index) => (
-                    <li
-                      key={index}
-                      className="flex items-center gap-2 text-muted-foreground"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-xs">
+                    <li key={index} className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span className="w-5 h-5 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-xs">
                         ✕
                       </span>
                       {item}
@@ -479,7 +505,7 @@ export default function LandingPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-4 gradient-text">
+                <h3 className="text-lg font-semibold mb-4 gradient-text">
                   PicPro AI
                 </h3>
                 <ul className="space-y-3">
@@ -491,8 +517,8 @@ export default function LandingPage() {
                     "100+ professional headshots",
                     "Ready in 30 minutes",
                   ].map((item, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                    <li key={index} className="flex items-center gap-3 text-sm">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
                         <Check className="w-3 h-3 text-primary" />
                       </span>
                       {item}
@@ -506,129 +532,95 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-4 bg-muted/20">
+      <section id="pricing" className="py-20 md:py-28 px-4 bg-muted/20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              Simple Pricing
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">Simple Pricing</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Choose Your Package
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               One-time payment. No subscriptions. Keep your headshots forever.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <PricingCard
-              title="Starter"
-              price={29}
-              features={[
-                "40 AI headshots",
-                "5 professional styles",
-                "48-hour delivery",
-                "High-resolution downloads",
-                "Basic backgrounds",
-              ]}
-              ctaText="Get Started"
-            />
-            <PricingCard
-              title="Professional"
-              price={49}
-              popular
-              features={[
-                "100 AI headshots",
-                "10 professional styles",
-                "2-hour express delivery",
-                "4K resolution downloads",
-                "Premium backgrounds",
-                "LinkedIn banner included",
-              ]}
-              ctaText="Most Popular"
-            />
-            <PricingCard
-              title="Executive"
-              price={99}
-              features={[
-                "200+ AI headshots",
-                "All styles unlocked",
-                "1-hour priority delivery",
-                "4K + RAW formats",
-                "Custom backgrounds",
-                "Full branding package",
-                "Priority support",
-              ]}
-              ctaText="Go Premium"
-            />
+            {pricingPlans.map((plan, index) => (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <PricingCard {...plan} />
+              </motion.div>
+            ))}
           </div>
 
-          <div className="mt-12 text-center">
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-              <Shield className="w-4 h-4" />
-              100% money-back guarantee if you&apos;re not satisfied
-            </p>
-          </div>
+          <motion.p
+            className="text-center mt-10 text-sm text-muted-foreground flex items-center justify-center gap-2"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+          >
+            <Shield className="w-4 h-4" />
+            100% money-back guarantee if you&apos;re not satisfied
+          </motion.p>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              Success Stories
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
+      <section className="py-20 md:py-28 px-4">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">Success Stories</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Loved by Professionals
             </h2>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                quote:
-                  "I was skeptical at first, but the results blew me away. Got my dream job with these headshots on my LinkedIn!",
-                author: "Sarah M.",
-                role: "Product Manager at Google",
-              },
-              {
-                quote:
-                  "Saved me $400 and a whole day. The AI perfectly captured my professional look. Highly recommend!",
-                author: "James K.",
-                role: "Startup Founder",
-              },
-              {
-                quote:
-                  "As a real estate agent, I need fresh photos constantly. PicPro AI is now my go-to solution.",
-                author: "Maria L.",
-                role: "Top 1% Realtor",
-              },
-            ].map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Card className="p-6 h-full border-border/50">
+                <Card className="p-6 h-full border-border/50 flex flex-col">
                   <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 fill-primary text-primary"
-                      />
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-muted-foreground mb-6 flex-grow leading-relaxed">
                     &ldquo;{testimonial.quote}&rdquo;
                   </p>
-                  <div>
-                    <p className="font-semibold">{testimonial.author}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={testimonial.avatar}
+                      alt={testimonial.author}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="font-medium text-sm">{testimonial.author}</p>
+                      <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -638,99 +630,74 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-24 px-4 bg-muted/20">
+      <section id="faq" className="py-20 md:py-28 px-4 bg-muted/20">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              FAQ
-            </Badge>
-            <h2 className="text-4xl font-bold mb-4">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-sm font-medium text-accent mb-3 block">FAQ</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Common Questions
             </h2>
-          </div>
+          </motion.div>
 
-          <Card className="p-6 border-border/50">
-            <FAQItem
-              question="How does it work?"
-              answer="Simply upload 10-15 photos of yourself (selfies work great!). Our AI analyzes your unique features and generates professional headshots in various styles. The whole process takes about 30 minutes."
-            />
-            <FAQItem
-              question="What kind of photos should I upload?"
-              answer="Upload clear photos of your face from different angles. Good lighting helps! Selfies, casual photos, and even older photos work well. The more variety, the better the results."
-            />
-            <FAQItem
-              question="How long does it take?"
-              answer="Depending on your package: Starter (48 hours), Professional (2 hours), Executive (1 hour). Most users get their headshots much faster!"
-            />
-            <FAQItem
-              question="Can I get a refund if I'm not satisfied?"
-              answer="Absolutely! We offer a 100% money-back guarantee. If you're not happy with your headshots, contact us within 7 days for a full refund."
-            />
-            <FAQItem
-              question="Are the headshots really AI-generated?"
-              answer="Yes! We use state-of-the-art AI trained on millions of professional photos. The AI learns your unique features and generates completely new, professional-looking headshots."
-            />
-            <FAQItem
-              question="Can I use these for LinkedIn and other platforms?"
-              answer="Absolutely! Your headshots are yours to use anywhere - LinkedIn, resumes, company websites, social media, business cards, and more."
-            />
+          <Card className="p-6 md:p-8 border-border/50">
+            {faqs.map((faq, index) => (
+              <FAQItem key={index} question={faq.question} answer={faq.answer} />
+            ))}
           </Card>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 px-4">
+      <section className="py-20 md:py-28 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-balance">
               Ready to Transform Your
               <br />
               <span className="gradient-text">Professional Image?</span>
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join 10,000+ professionals who&apos;ve upgraded their online presence
               with PicPro AI headshots.
             </p>
             <Link href="/upload">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-lg px-12 py-6 animate-pulse-glow"
-              >
+              <Button size="xl" variant="glow">
                 Get Your Headshots Now
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Starting at $29 • 100% money-back guarantee
+              Starting at $29 · 100% money-back guarantee
             </p>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-border/50">
-        <div className="max-w-7xl mx-auto">
+      <footer className="py-10 px-4 border-t border-border/30">
+        <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
+                <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">PicPro AI</span>
+              <span className="font-semibold">PicPro AI</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">
-                Terms
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Contact
-              </a>
+              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
             </div>
             <p className="text-sm text-muted-foreground">
               © 2024 PicPro AI. All rights reserved.
@@ -739,6 +706,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-    </LazyMotion>
   );
 }

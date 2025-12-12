@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { SkeletonGrid, Skeleton } from "@/components/ui/skeleton";
 import {
   Sparkles,
   Download,
@@ -17,12 +17,13 @@ import {
   LayoutGrid,
   RefreshCw,
   ExternalLink,
+  Mail,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-// Types
 interface Headshot {
   id: string;
   style: string;
@@ -45,7 +46,6 @@ interface OrderData {
   }>;
 }
 
-// Style names mapping
 const STYLE_NAMES: Record<string, string> = {
   corporate: "Corporate Executive",
   tech: "Tech Startup",
@@ -59,7 +59,6 @@ const STYLE_NAMES: Record<string, string> = {
   founder: "Startup Founder",
 };
 
-// Demo data generator
 function generateDemoHeadshots(): Headshot[] {
   const styles = ["corporate", "tech", "creative", "linkedin", "founder"];
   return styles.flatMap((style) =>
@@ -69,7 +68,7 @@ function generateDemoHeadshots(): Headshot[] {
         id: `${style}-${i}`,
         style,
         styleName: STYLE_NAMES[style] || style,
-        url: `https://picsum.photos/seed/${style}${i}/400/500`,
+        url: `https://images.unsplash.com/photo-${1560250097 + i * 1000}-0b93528c311a?w=400&h=500&fit=crop&crop=face`,
       }))
   );
 }
@@ -91,14 +90,14 @@ function DashboardContent() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!isDemo);
 
-  // Fetch order data
   const fetchOrderData = useCallback(async () => {
     if (isDemo) {
       setHeadshots(generateDemoHeadshots());
       setAvailableStyles(["corporate", "tech", "creative", "linkedin", "founder"]);
       setStatus("completed");
+      setIsLoading(false);
       return;
     }
 
@@ -127,27 +126,24 @@ function DashboardContent() {
         const styles = [...new Set(formattedHeadshots.map((h) => h.style))];
         setAvailableStyles(styles);
       }
+      setIsLoading(false);
     } catch (err) {
       console.error("Error fetching order:", err);
-      // Fall back to demo mode on error
       setHeadshots(generateDemoHeadshots());
       setAvailableStyles(["corporate", "tech", "creative", "linkedin", "founder"]);
       setStatus("completed");
+      setIsLoading(false);
     }
   }, [orderId, sessionId, isDemo]);
 
-  // Initial fetch
   useEffect(() => {
     fetchOrderData();
   }, [fetchOrderData]);
 
-  // Poll for updates if processing
   useEffect(() => {
     if (status === "training" || status === "generating" || status === "paid") {
       const interval = setInterval(() => {
         fetchOrderData();
-        
-        // Simulate progress
         setProgress((prev) => {
           const increment = status === "training" ? 0.5 : 2;
           return Math.min(prev + increment, status === "training" ? 50 : 95);
@@ -162,24 +158,13 @@ function DashboardContent() {
     }
   }, [status, fetchOrderData]);
 
-  // Calculate progress based on status
   useEffect(() => {
     switch (status) {
-      case "pending":
-        setProgress(0);
-        break;
-      case "paid":
-        setProgress(10);
-        break;
-      case "training":
-        setProgress(30);
-        break;
-      case "generating":
-        setProgress(70);
-        break;
-      case "completed":
-        setProgress(100);
-        break;
+      case "pending": setProgress(0); break;
+      case "paid": setProgress(10); break;
+      case "training": setProgress(30); break;
+      case "generating": setProgress(70); break;
+      case "completed": setProgress(100); break;
     }
   }, [status]);
 
@@ -211,13 +196,11 @@ function DashboardContent() {
     const selectedHeadshots = headshots.filter((h) => selectedImages.has(h.id));
     
     if (selectedHeadshots.length === 1) {
-      // Single image download
       const link = document.createElement("a");
       link.href = selectedHeadshots[0].url;
       link.download = `headshot-${selectedHeadshots[0].style}.webp`;
       link.click();
     } else {
-      // Multiple images - open each in new tab (in production, create zip)
       alert(`Downloading ${selectedHeadshots.length} images...\n\nIn production, this would download a zip file.`);
       selectedHeadshots.forEach((h) => {
         window.open(h.url, "_blank");
@@ -228,26 +211,28 @@ function DashboardContent() {
   const isProcessing = ["pending", "paid", "training", "generating"].includes(status);
 
   return (
-    <div className="min-h-screen bg-background bg-grid bg-radial-gradient">
+    <div className="min-h-screen bg-background bg-noise">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">PicPro AI</span>
+              <span className="text-lg font-semibold tracking-tight">PicPro AI</span>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {status === "completed" && (
-                <Badge className="bg-primary/20 text-primary border-primary/30">
-                  <Check className="w-3 h-3 mr-1" />
+                <span className="text-xs bg-primary/20 text-primary px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                  <Check className="w-3 h-3" />
                   Ready to download
-                </Badge>
+                </span>
               )}
               {isDemo && (
-                <Badge variant="outline">Demo Mode</Badge>
+                <span className="text-xs bg-muted text-muted-foreground px-2.5 py-1 rounded-full">
+                  Demo
+                </span>
               )}
             </div>
           </div>
@@ -255,25 +240,29 @@ function DashboardContent() {
       </nav>
 
       <main className="pt-24 pb-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Error State */}
-          {error && (
-            <Card className="p-6 border-destructive/50 bg-destructive/10 mb-8">
-              <p className="text-destructive">{error}</p>
-            </Card>
+        <div className="max-w-6xl mx-auto">
+          {/* Loading State */}
+          {isLoading && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+              <SkeletonGrid count={12} columns={4} aspectRatio="portrait" />
+            </div>
           )}
 
           {/* Processing State */}
-          {isProcessing && (
+          {!isLoading && isProcessing && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-2xl mx-auto text-center"
+              className="max-w-xl mx-auto text-center"
             >
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                <RefreshCw className="w-10 h-10 text-primary animate-spin" />
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <RefreshCw className="w-8 h-8 text-primary animate-spin" />
               </div>
-              <h1 className="text-3xl font-bold mb-4">
+              <h1 className="text-2xl font-bold mb-3">
                 {status === "training" ? "Training Your AI Model" : 
                  status === "generating" ? "Generating Headshots" :
                  "Processing Your Order"}
@@ -286,87 +275,79 @@ function DashboardContent() {
                   : "Please wait while we process your photos."}
               </p>
 
-              <Card className="p-6 border-border/50 mb-8">
-                <div className="flex items-center justify-between mb-2">
+              <Card className="p-6 border-border/50 mb-6">
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-muted-foreground">Progress</span>
                   <span className="text-sm font-medium">{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-3" />
+                <Progress value={progress} className="h-2 mb-6" />
 
-                <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      progress >= 10 ? "bg-primary text-primary-foreground" : "bg-muted"
-                    }`}>
-                      {progress >= 10 ? <Check className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  {[
+                    { threshold: 10, icon: Check, label: "Uploaded" },
+                    { threshold: 50, icon: Zap, label: "Training" },
+                    { threshold: 90, icon: ImageIcon, label: "Generating" },
+                  ].map((step, index) => (
+                    <div key={index}>
+                      <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                        progress >= step.threshold ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {progress >= step.threshold ? <Check className="w-4 h-4" /> : <step.icon className="w-4 h-4" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{step.label}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Photos Uploaded</p>
-                  </div>
-                  <div>
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      progress >= 50 ? "bg-primary text-primary-foreground" : "bg-muted"
-                    }`}>
-                      {progress >= 50 ? <Check className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground">AI Training</p>
-                  </div>
-                  <div>
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      progress >= 90 ? "bg-primary text-primary-foreground" : "bg-muted"
-                    }`}>
-                      {progress >= 90 ? <Check className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Generating</p>
-                  </div>
+                  ))}
                 </div>
               </Card>
 
-              <p className="text-sm text-muted-foreground">
-                We&apos;ll email you when your headshots are ready.
-                <br />
-                Feel free to close this page.
-              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Mail className="w-4 h-4" />
+                We&apos;ll email you when ready
+              </div>
             </motion.div>
           )}
 
           {/* Completed State - Gallery */}
-          {status === "completed" && headshots.length > 0 && (
+          {!isLoading && status === "completed" && headshots.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Your Headshots</h1>
-                  <p className="text-muted-foreground">
+                  <h1 className="text-2xl font-bold mb-1">Your Headshots</h1>
+                  <p className="text-sm text-muted-foreground">
                     {headshots.length} professional headshots generated
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {selectedImages.size > 0 && (
-                    <Badge variant="outline" className="cursor-pointer" onClick={clearSelection}>
+                    <button
+                      onClick={clearSelection}
+                      className="text-xs bg-muted px-2.5 py-1.5 rounded-full flex items-center gap-1 hover:bg-muted/80 transition-colors"
+                    >
                       {selectedImages.size} selected
-                      <span className="ml-1">×</span>
-                    </Badge>
+                      <span className="text-muted-foreground">×</span>
+                    </button>
                   )}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={selectedImages.size === filteredHeadshots.length ? clearSelection : selectAll}
                   >
-                    {selectedImages.size === filteredHeadshots.length ? "Deselect All" : "Select All"}
+                    {selectedImages.size === filteredHeadshots.length ? "Deselect" : "Select All"}
                   </Button>
-                  <div className="flex items-center border border-border rounded-lg p-1">
+                  <div className="flex items-center border border-border rounded-lg p-0.5">
                     <button
-                      className={`p-1.5 rounded ${viewMode === "grid" ? "bg-muted" : "hover:bg-muted/50"}`}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-muted" : "hover:bg-muted/50"}`}
                       onClick={() => setViewMode("grid")}
                     >
                       <Grid3X3 className="w-4 h-4" />
                     </button>
                     <button
-                      className={`p-1.5 rounded ${viewMode === "large" ? "bg-muted" : "hover:bg-muted/50"}`}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "large" ? "bg-muted" : "hover:bg-muted/50"}`}
                       onClick={() => setViewMode("large")}
                     >
                       <LayoutGrid className="w-4 h-4" />
@@ -375,7 +356,6 @@ function DashboardContent() {
                   <Button
                     onClick={downloadSelected}
                     disabled={selectedImages.size === 0}
-                    className="bg-primary hover:bg-primary/90"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download {selectedImages.size > 0 ? `(${selectedImages.size})` : ""}
@@ -405,19 +385,20 @@ function DashboardContent() {
               </div>
 
               {/* Gallery Grid */}
-              <div className={`grid gap-4 ${
+              <div className={`grid gap-3 ${
                 viewMode === "grid"
                   ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
                   : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
               }`}>
-                <AnimatePresence>
+                <AnimatePresence mode="popLayout">
                   {filteredHeadshots.map((headshot, index) => (
                     <motion.div
                       key={headshot.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: index * 0.02 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2, delay: index * 0.02 }}
+                      layout
                       className="relative group"
                     >
                       <Card
@@ -438,13 +419,13 @@ function DashboardContent() {
                         </div>
 
                         {/* Selection indicator */}
-                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        <div className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                           selectedImages.has(headshot.id)
                             ? "border-primary bg-primary"
                             : "border-white/50 bg-black/20 opacity-0 group-hover:opacity-100"
                         }`}>
                           {selectedImages.has(headshot.id) && (
-                            <Check className="w-4 h-4 text-primary-foreground" />
+                            <Check className="w-3 h-3 text-primary-foreground" />
                           )}
                         </div>
 
@@ -477,7 +458,7 @@ function DashboardContent() {
                       </Card>
 
                       {viewMode === "large" && (
-                        <p className="mt-2 text-sm text-muted-foreground">{headshot.styleName}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">{headshot.styleName}</p>
                       )}
                     </motion.div>
                   ))}
@@ -488,23 +469,22 @@ function DashboardContent() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="mt-12 text-center"
+                transition={{ delay: 0.3 }}
+                className="mt-12"
               >
-                <Card className="p-8 border-border/50 max-w-2xl mx-auto">
-                  <h3 className="text-xl font-semibold mb-2">Love your headshots?</h3>
-                  <p className="text-muted-foreground mb-4">
+                <Card className="p-6 border-border/50 max-w-xl mx-auto text-center">
+                  <h3 className="font-semibold mb-2">Love your headshots?</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Download all {headshots.length} headshots in one click
                   </p>
                   <Button
                     size="lg"
-                    className="bg-primary hover:bg-primary/90"
                     onClick={() => {
                       selectAll();
                       setTimeout(downloadSelected, 100);
                     }}
                   >
-                    <Download className="w-5 h-5 mr-2" />
+                    <Download className="w-4 h-4 mr-2" />
                     Download All Headshots
                   </Button>
                 </Card>
@@ -512,20 +492,43 @@ function DashboardContent() {
             </motion.div>
           )}
 
-          {/* Failed State */}
-          {status === "failed" && (
+          {/* Empty State */}
+          {!isLoading && status === "completed" && headshots.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-2xl mx-auto text-center"
+              className="max-w-md mx-auto text-center py-12"
             >
-              <Card className="p-8 border-destructive/50">
-                <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
+                <ImageIcon className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">No headshots yet</h2>
+              <p className="text-muted-foreground mb-6">
+                Start by uploading your photos to generate professional headshots.
+              </p>
+              <Link href="/upload">
+                <Button>
+                  Upload Photos
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </motion.div>
+          )}
+
+          {/* Failed State */}
+          {!isLoading && status === "failed" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-md mx-auto text-center"
+            >
+              <Card className="p-6 border-destructive/50">
+                <h1 className="text-xl font-bold mb-3">Something went wrong</h1>
                 <p className="text-muted-foreground mb-6">
                   We encountered an issue processing your order. Please contact support.
                 </p>
                 <Button asChild>
-                  <Link href="mailto:support@picpro.ai">Contact Support</Link>
+                  <Link href="mailto:support@getpicpro.com">Contact Support</Link>
                 </Button>
               </Card>
             </motion.div>
